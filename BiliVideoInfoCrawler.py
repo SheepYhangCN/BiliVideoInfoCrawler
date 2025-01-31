@@ -48,7 +48,7 @@ async def Crawl(id, filename = ""):
 		f.write(json.dumps(info, indent = 4, ensure_ascii = False))
 	with open(filename+".txt", mode="w", encoding="utf-8") as f:
 		f.write(id)
-		f.write("\n标题:"+info["title"])
+		f.write("\n标题："+info["title"])
 		f.write("\n播放量："+str(info["stat"]["view"]))
 		f.write("\n投稿时间："+time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(info["pubdate"])))
 		f.write("\n点赞: "+str(info["stat"]["like"]))
