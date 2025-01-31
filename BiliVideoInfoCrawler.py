@@ -89,7 +89,7 @@ async def Crawl(id, filename = ""):
 
 	v = ffmpeg.input(filename+".v.mp4")
 	a = ffmpeg.input(filename+".a.mp3")
-	out = ffmpeg.overwrite_output(ffmpeg.output(v,a,filename+".mp4"))
+	out = ffmpeg.overwrite_output(ffmpeg.output(v,a,filename+".mp4",vcodec = "hevc_nvenc"))
 	ffmpeg.run(out)
 	print("视频合并完成")
 
