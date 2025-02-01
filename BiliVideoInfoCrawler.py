@@ -1,10 +1,10 @@
 import requests
-import re
+# import re
 import json
 import os
 import ffmpeg
 import asyncio
-from bilibili_api import video
+from bilibili_api import video, Credential
 import time
 import urllib
 
@@ -25,18 +25,20 @@ async def Crawl(id, filename = ""):
 		url = "https://www.bilibili.com/video/"+id
 	head = {
 				"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36",
-				"Referer":url
+				"Referer": url,
+				"Cookie": ""
 			}
-	resp = requests.get(url, headers=head)
+	# resp = requests.get(url, headers=head)
 
 	if (filename == ""):
 		filename = id
 
 	print("文件名：",filename)
+	credential = Credential(sessdata="", bili_jct="", buvid3="")
 	if (id.lower().startswith("av")):
-		v = video.Video(aid = int(id.lstrip("av")))
+		v = video.Video(aid = int(id.lstrip("av")), credential=credential)
 	elif (id.lower().startswith("bv")):
-		v = video.Video(bvid = id)
+		v = video.Video(bvid = id, credential=credential)
 	info = await v.get_info()
 	with open(filename+".json", mode="w", encoding="utf-8") as f:
 		f.write(json.dumps(info, indent = 4, ensure_ascii = False))
@@ -66,30 +68,52 @@ async def Crawl(id, filename = ""):
 		f.write(pic_data)
 	print("封面下载完成")
 
-	json_data = re.findall("<script>window.__playinfo__=(.*?)</script>", resp.text)[0]
-	json_data = json.loads(json_data)
+	# json_data = re.findall("<script>window.__playinfo__=(.*?)</script>", resp.text)[0]
+	# json_data = json.loads(json_data)
 
-	audio_url = json_data["data"]["dash"]["audio"][0]["backupUrl"][0]
-	audio_data = requests.get(audio_url,headers=head)
-	with open(filename+".a.mp3", mode="wb") as f:
-		f.write(audio_data.content)
-	print("音频下载完成")
+	# audio_url = json_data["data"]["dash"]["audio"][0]["backupUrl"][0]
+	# audio_data = requests.get(audio_url,headers=head)
+	# with open(filename+".a.mp3", mode="wb") as f:
+	# 	f.write(audio_data.content)
+	# print("音频下载完成")
 
-	video_url = json_data["data"]["dash"]["video"][0]["backupUrl"][0]
-	video_data = requests.get(video_url,headers=head)
-	with open(filename+".v.mp4", mode="wb") as f:
-		f.write(video_data.content)
-	print("视频下载完成")
-
-	v = ffmpeg.input(filename+".v.mp4")
-	a = ffmpeg.input(filename+".a.mp3")
-	out = ffmpeg.overwrite_output(ffmpeg.output(v,a,filename+".mp4",vcodec = "hevc_nvenc"))
-	ffmpeg.run(out)
-	print("视频合并完成")
-
-	os.remove(filename+".v.mp4")
-	os.remove(filename+".a.mp3")
-	print("临时文件已删除")
+	# video_url = json_data["data"]["dash"]["video"][0]["backupUrl"][0]
+	# video_data = requests.get(video_url,headers=head)
+	# with open(filename+".v.mp4", mode="wb") as f:
+	# 	f.write(video_data.content)
+	# print("视频下载完成")
+	
+	download_url_data = await v.get_download_url(0)
+	detecter = video.VideoDownloadURLDataDetecter(data=download_url_data)
+	streams = detecter.detect_best_streams()
+	if detecter.check_flv_stream() == True:
+		resp = requests.get(streams[0].url, headers=head)
+		with open(filename+".flv", 'wb') as f:
+			f.write(resp.content)
+		print("FLV 下载完成")
+		v = ffmpeg.input(filename+".flv")
+		out = ffmpeg.overwrite_output(ffmpeg.output(v,filename+".mp4",vcodec = "hevc_nvenc"))
+		ffmpeg.run(out)
+		print("FLV 转换完成")
+		os.remove(filename+".flv")
+		print("临时文件已删除")
+	else:
+		resp = requests.get(streams[0].url, headers=head)
+		with open(filename+".v.m4s", 'wb') as f:
+			f.write(resp.content)
+		print("视频下载完成")
+		resp = requests.get(streams[1].url, headers=head)
+		with open(filename+".a.m4s", 'wb') as f:
+			f.write(resp.content)
+		print("音频下载完成")
+		v = ffmpeg.input(filename+".v.m4s")
+		a = ffmpeg.input(filename+".a.m4s")
+		out = ffmpeg.overwrite_output(ffmpeg.output(v,a,filename+".mp4",vcodec = "hevc_nvenc"))
+		ffmpeg.run(out)
+		print("视频合并完成")
+		os.remove(filename+".v.m4s")
+		os.remove(filename+".a.m4s")
+		print("临时文件已删除")
 
 if (__name__ == "__main__"):
 	asyncio.run(Crawl(input("输入该视频的av/BV号或链接："),input("自定义文件名（留空使用av/BV号）：")))
