@@ -24,7 +24,7 @@ async def Crawl(id, filename = ""):
 				id = "BV"+id
 		url = "https://www.bilibili.com/video/"+id
 	head = {
-				"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36 Edge/91.0.864.67",
+				"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36",
 				"Referer":url
 			}
 	resp = requests.get(url, headers=head)
