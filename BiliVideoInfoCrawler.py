@@ -8,11 +8,6 @@ from bilibili_api import video
 import time
 import urllib
 
-def av2bv(aid):
-	return json.loads(requests.get("https://api.bilibili.com/x/web-interface/view?aid="+str(aid),headers = {
-				"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36 Edge/91.0.864.67"
-			}).content)["data"]["bvid"]
-
 async def Crawl(id, filename = ""):
 	id = str(id)
 	filename = str(filename)
@@ -39,8 +34,7 @@ async def Crawl(id, filename = ""):
 
 	print("文件名：",filename)
 	if (id.lower().startswith("av")):
-		#v = video.Video(aid = int(id.lstrip("av"))) #等待bilibili-api-python修复bvid转换算法后更换
-		v = video.Video(bvid = av2bv(int(id.lstrip("av"))))
+		v = video.Video(aid = int(id.lstrip("av")))
 	elif (id.lower().startswith("bv")):
 		v = video.Video(bvid = id)
 	info = await v.get_info()
