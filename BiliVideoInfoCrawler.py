@@ -83,37 +83,40 @@ async def Crawl(id, filename = ""):
 	# 	f.write(video_data.content)
 	# print("视频下载完成")
 	
-	download_url_data = await v.get_download_url(0)
-	detecter = video.VideoDownloadURLDataDetecter(data=download_url_data)
-	streams = detecter.detect_best_streams()
-	if detecter.check_flv_stream() == True:
-		resp = requests.get(streams[0].url, headers=head)
-		with open(filename+".flv", 'wb') as f:
-			f.write(resp.content)
-		print("FLV 下载完成")
-		v = ffmpeg.input(filename+".flv")
-		out = ffmpeg.overwrite_output(ffmpeg.output(v,filename+".mp4",vcodec = "hevc_nvenc"))
-		ffmpeg.run(out)
-		print("FLV 转换完成")
-		os.remove(filename+".flv")
-		print("临时文件已删除")
+	if (os.path.exists(filename+".mp4")):
+		print(filename+".mp4 已存在，跳过视频下载")
 	else:
-		resp = requests.get(streams[0].url, headers=head)
-		with open(filename+".v.m4s", 'wb') as f:
-			f.write(resp.content)
-		print("视频下载完成")
-		resp = requests.get(streams[1].url, headers=head)
-		with open(filename+".a.m4s", 'wb') as f:
-			f.write(resp.content)
-		print("音频下载完成")
-		v = ffmpeg.input(filename+".v.m4s")
-		a = ffmpeg.input(filename+".a.m4s")
-		out = ffmpeg.overwrite_output(ffmpeg.output(v,a,filename+".mp4",vcodec = "hevc_nvenc"))
-		ffmpeg.run(out)
-		print("视频合并完成")
-		os.remove(filename+".v.m4s")
-		os.remove(filename+".a.m4s")
-		print("临时文件已删除")
+		download_url_data = await v.get_download_url(0)
+		detecter = video.VideoDownloadURLDataDetecter(data=download_url_data)
+		streams = detecter.detect_best_streams()
+		if detecter.check_flv_stream() == True:
+			resp = requests.get(streams[0].url, headers=head)
+			with open(filename+".flv", 'wb') as f:
+				f.write(resp.content)
+			print("FLV 下载完成")
+			v = ffmpeg.input(filename+".flv")
+			out = ffmpeg.overwrite_output(ffmpeg.output(v,filename+".mp4",vcodec = "hevc_nvenc"))
+			ffmpeg.run(out)
+			print("FLV 转换完成")
+			os.remove(filename+".flv")
+			print("临时文件已删除")
+		else:
+			resp = requests.get(streams[0].url, headers=head)
+			with open(filename+".v.m4s", 'wb') as f:
+				f.write(resp.content)
+			print("视频下载完成")
+			resp = requests.get(streams[1].url, headers=head)
+			with open(filename+".a.m4s", 'wb') as f:
+				f.write(resp.content)
+			print("音频下载完成")
+			v = ffmpeg.input(filename+".v.m4s")
+			a = ffmpeg.input(filename+".a.m4s")
+			out = ffmpeg.overwrite_output(ffmpeg.output(v,a,filename+".mp4",vcodec = "hevc_nvenc"))
+			ffmpeg.run(out)
+			print("视频合并完成")
+			os.remove(filename+".v.m4s")
+			os.remove(filename+".a.m4s")
+			print("临时文件已删除")
 
 if (__name__ == "__main__"):
 	asyncio.run(Crawl(input("输入该视频的av/BV号或链接："),input("自定义文件名（留空使用av/BV号）：")))
